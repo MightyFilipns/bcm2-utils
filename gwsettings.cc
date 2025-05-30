@@ -180,7 +180,14 @@ string gws_decrypt(string buf, string& checksum, string& key, const csp<profile>
 			key = buf.back();
 		}
 		buf = crypt_motorola(buf.substr(0, buf.size() - 1), key);
-	} else {
+	}
+	else if (p->name() == "CGA2121")
+	{
+		auto temp = gws_crypt(buf.substr(0x50), key, enc, false);
+		buf = buf.substr(0x4A,6) + temp;
+	}
+	else
+	{
 		buf = gws_crypt(buf, key, enc, false);
 	}
 
@@ -665,16 +672,16 @@ class gwsettings : public encryptable_settings
 		clip_circumfix(buf);
 		validate_checksum_and_detect_profile(buf);
 		validate_magic(buf);
-		m_encrypted = !m_magic_valid;
+		m_encrypted = m_profile->name() == "CGA2121" ? true : !m_magic_valid;  // Special exception for CGA2121
 
-		if (!m_magic_valid && !decrypt_and_detect_profile(buf)) {
+		if (m_encrypted && !decrypt_and_detect_profile(buf)) {
 			m_key = m_pw = "";
 			return is;
 		} else if (!m_encrypted) {
 			m_key = m_pw = "";
 		}
 
-		istringstream istr(buf.substr(m_magic.size()));
+		istringstream istr(buf.substr(m_profile->name() == "CGA2121" ? 0 : m_magic.size()));
 		read_header(istr, buf.size());
 
 		if (!m_checksum_valid) {
@@ -778,6 +785,7 @@ class gwsettings : public encryptable_settings
 		// DNA
 		// CLARO
 		// SFR-PC20
+		// SBB - Serbia
 		const string magic2_part2 = "056t9p48jp4ee6u9ee659jy9e-54e4j6r0j069k-056";
 
 		const vector<string> magics {
@@ -834,6 +842,13 @@ class gwsettings : public encryptable_settings
 
 		auto v = m_version.num();
 		logger::t("version=%d.%d, size=%d\n", v >> 8, v & 0xff, m_size.num());
+
+		if (m_profile->name() == "CGA2121")
+		{
+			// for some reason m_size also include the size of the magic string
+			// So we adjust bufsize
+			bufsize += 0x4A;
+		}
 
 		m_size_valid = m_size.num() == bufsize;
 

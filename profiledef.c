@@ -18,6 +18,7 @@
  */
 
 #include "profile.h"
+#include "lonesha256.h"
 
 static bool keyfun_tc7200(const char *password, unsigned char *key, size_t size)
 {
@@ -33,6 +34,16 @@ static bool keyfun_tc7200(const char *password, unsigned char *key, size_t size)
 		}
 		memcpy(key, password, len);
 	}
+
+	return true;
+}
+
+static bool keyfun_cga2121(const char *password, unsigned char *key, size_t size)
+{
+	if (password == nullptr || key == nullptr)
+		return false;
+
+	lonesha256(key, (const unsigned char*)password, strlen(password));
 
 	return true;
 }
@@ -76,6 +87,20 @@ struct bcm2_profile bcm2_profiles[] = {
 				},
 			}
 		},
+	},
+	{
+		.name = "CGA2121",
+		.pretty = "Technicolor CGA2121",
+		.baudrate = 115200,
+		.cfg_md5key = "3250736c633b752865676d64302d2778",
+		.cfg_flags = BCM2_CFG_ENC_AES256_ECB | BCM2_CFG_PAD_ZERO,
+		.cfg_keyfun = &keyfun_cga2121,
+		.spaces = {
+			{
+				.name = "ram",
+				.parts = {}
+			},
+		}
 	},
 #if 1
 	{
