@@ -18,6 +18,7 @@
  */
 
 #include "profile.h"
+//#include "crypto.h"
 #include "lonesha256.h"
 
 static bool keyfun_tc7200(const char *password, unsigned char *key, size_t size)
@@ -43,6 +44,7 @@ static bool keyfun_cga2121(const char *password, unsigned char *key, size_t size
 	if (password == nullptr || key == nullptr)
 		return false;
 
+	//hash_sha256((const unsigned char*)password, strlen(password), key);
 	lonesha256(key, (const unsigned char*)password, strlen(password));
 
 	return true;
@@ -1445,13 +1447,13 @@ struct bcm2_profile bcm2_profiles[] = {
 		.blsig = 0x3384,
 		.baudrate = 115200,
 		.spaces = {
-			{ 
+			{
 				.name = "ram",
 				.min = 0x80000000,
 				.size = 128 * 1024 * 1024,
 				.parts = {
 					{ "bootloader", 0x83f80000, 0x10000 },
-				}, 
+				},
 			},
 			{
 				.name = "flash",

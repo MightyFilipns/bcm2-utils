@@ -45,6 +45,7 @@
 #else
 #include <openssl/aes.h>
 #include <openssl/md5.h>
+#include <openssl/sha.h>
 #include <openssl/des.h>
 #define BCM2UTILS_USE_OPENSSL
 #endif
@@ -367,6 +368,14 @@ string hash_md5(const string& buf)
 	}
 
 	return md5;
+#endif
+}
+extern "C" void hash_sha256(const unsigned char *buf, int buf_size, unsigned char *hash)
+{
+#ifndef BCM2UTILS_USE_WINCRYPT
+	SHA256(buf, buf_size, hash);
+#else
+	#error TODO: SHA256 using winapi
 #endif
 }
 

@@ -19,9 +19,13 @@
 
 #ifndef BCM2UTILS_CRYPTO_H
 #define BCM2UTILS_CRYPTO_H
+
+
+// extern "C" void hash_sha256(const unsigned char *buf, int buf_size, unsigned char *hash);
+
+#ifdef __cplusplus
 #include <string>
 namespace bcm2utils {
-
 std::string hash_md5(const std::string& buf);
 
 std::string crypt_aes_256_ecb(const std::string& buf, const std::string& key, bool encrypt);
@@ -32,6 +36,6 @@ std::string crypt_des_ecb(const std::string& buf, const std::string& key, bool e
 std::string crypt_motorola(std::string buf, const std::string& key);
 std::string crypt_sub_16x16(std::string buf, bool encrypt);
 std::string crypt_xor_char(std::string buf, const std::string& key);
-
 }
+#endif
 #endif

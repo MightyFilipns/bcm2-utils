@@ -249,7 +249,15 @@ string gws_encrypt(string buf, const string& key, const csp<profile>& p, bool pa
 			}
 		}
 
-		buf = gws_crypt(buf, key, enc, true);
+		if (flags & BCM2_CFG_ENC_AES256_ECB)
+		{
+			buf = buf.substr(0, 0x50) + gws_crypt(buf.substr(0x50, string::npos), key, enc, true);
+		}
+		else
+		{
+			buf = gws_crypt(buf, key, enc, true);
+		}
+
 	} else {
 		throw user_error("profile " + p->name() + " does not support encryption");
 	}
@@ -672,7 +680,29 @@ class gwsettings : public encryptable_settings
 		clip_circumfix(buf);
 		validate_checksum_and_detect_profile(buf);
 		validate_magic(buf);
-		m_encrypted = m_profile->name() == "CGA2121" ? true : !m_magic_valid;  // Special exception for CGA2121
+
+
+		m_encrypted = !m_magic_valid;
+		if (m_profile->name() == "CGA2121")  // The magic string and the header aren't encrypted so there's no easy way to know if its encrypted
+		{
+			m_encrypted = false;
+			try
+			{
+				// Determine if the file is encrypted by trying to read it.
+				istringstream temp_str(buf.substr(0x60));
+				read_header(temp_str, buf.size());
+				settings::read(temp_str);
+			} catch (...)
+			{
+				m_encrypted = true;
+			}
+			list d;
+			groups(d);
+			if (d.size() < 4) // Basic check
+				m_encrypted = true;
+		}
+
+
 
 		if (m_encrypted && !decrypt_and_detect_profile(buf)) {
 			m_key = m_pw = "";
@@ -681,7 +711,7 @@ class gwsettings : public encryptable_settings
 			m_key = m_pw = "";
 		}
 
-		istringstream istr(buf.substr(m_profile->name() == "CGA2121" ? 0 : m_magic.size()));
+		istringstream istr(buf.substr(m_profile->name() == "CGA2121" && m_encrypted ? 0 : m_magic.size()));
 		read_header(istr, buf.size());
 
 		if (!m_checksum_valid) {
